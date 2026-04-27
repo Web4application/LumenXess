@@ -1,8 +1,10 @@
 .. _neural_networks_supervised:
 
 ==================================
-Neural network models (supervised)
+## Neural network models (supervised)
 ==================================
+
+.. _neural_networks_supervised:
 
 .. currentmodule:: sklearn.neural_network
 
