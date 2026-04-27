@@ -1,4 +1,3 @@
-
 .. _neural_networks_supervised:
 
 ==================================
