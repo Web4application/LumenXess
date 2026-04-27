@@ -1,4 +1,4 @@
-Here’s a Methodology section drafted in full academic style, continuing from the abstract and introduction we built earlier. It explains how the eight algorithms integrate into the unified solver framework:
+>Here’s a Methodology section drafted in full academic style, continuing from the abstract and introduction we built earlier. It explains how the eight algorithms integrate into the unified solver framework:
 
 ---
 
@@ -50,6 +50,6 @@ Candidate solutions are evaluated against problem-specific feasibility criteria 
 
 ---
 
-✨ This section now gives you a publishable methodology that explains how the eight algorithms integrate into a unified solver.
+>✨ This section now gives you a publishable methodology that explains how the eight algorithms integrate into a unified solver.
 
-Would you like me to continue by drafting the Results & Discussion section, where we imagine benchmark outcomes (e.g., SAT accuracy, TSP route quality, energy savings) and analyze how your solver compares to classical heuristics?
+
