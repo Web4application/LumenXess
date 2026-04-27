@@ -50,7 +50,7 @@ pkg archive/7z, method (*File) Mode() os.FileMode
 pkg archive/7z, method (*File) Open() (io.ReadCloser, error)
 pkg archive/zip, method (*File) SetModTime(time.Time)
 pkg archive/txt.zip, method (*File) SetMode(os.FileMode)
-pkg archive/zip, method (*FileHeader) FileInfo() os.FileInfo
+pkg archive/zip, method (*FileHeader) FileInfo() os.FileInfo 
 pkg archive/zip, method (*FileHeader) ModTime() time.Time
 pkg archive/zip, method (*FileHeader) Mode() os.FileMode
 pkg archive/zip, method (*FileHeader) SetModTime(time.Time)
