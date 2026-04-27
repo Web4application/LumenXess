@@ -1,0 +1,266 @@
+import math
+import hashlib
+import random
+import time
+from collections import deque
+from datetime import datetime
+
+import matplotlib.pyplot as plt
+
+
+# -------------------------
+# Layer 1: Mapping / FTL
+# -------------------------
+class NVMEMapper:
+    def __init__(self, channels=8, dies_per_channel=4,
+                 blocks_per_die=4096, pages_per_block=256,
+                 overprov_ratio=0.1):
+
+        self.channels = channels
+        self.dies_per_channel = dies_per_channel
+        self.blocks_per_die = blocks_per_die
+        self.pages_per_block = pages_per_block
+
+        self.total_blocks = channels * dies_per_channel * blocks_per_die
+        self.total_pages = self.total_blocks * pages_per_block
+
+        self.overprov_blocks = int(self.total_blocks * overprov_ratio)
+
+        # Wear + validity
+        self.block_wear = [0] * self.total_blocks
+        self.valid_pages = [0] * self.total_blocks
+
+        # Free pool (tail reserved as OP space)
+        self.free_blocks = set(range(self.total_blocks - self.overprov_blocks,
+                                     self.total_blocks))
+
+        # LBA → physical mapping
+        self.lba_map = {}
+
+    def _hash_lba(self, key):
+        h = hashlib.sha256(key.encode()).hexdigest()
+        return int(h, 16) % self.total_pages
+
+    def _choose_block(self, temperature=0.5):
+        # Score: prefer low wear + randomness (temperature drives dispersion)
+        best_block = None
+        best_score = -1
+
+        for b in range(self.total_blocks):
+            wear = self.block_wear[b]
+            score = (1 / (1 + wear)) * (1 - temperature + random.random() * temperature)
+            if score > best_score:
+                best_score = score
+                best_block = b
+
+        return best_block
+
+    def _decompose(self, block, page):
+        die = (block // self.blocks_per_die) % self.dies_per_channel
+        channel = block // (self.blocks_per_die * self.dies_per_channel)
+
+        return {
+            "channel": channel,
+            "die": die,
+            "block": block % self.blocks_per_die,
+            "page": page
+        }
+
+    def write(self, key, temperature=0.5):
+        lba = self._hash_lba(key)
+
+        block = self._choose_block(temperature)
+        page = random.randint(0, self.pages_per_block - 1)
+
+        # Invalidate old mapping (write amplification precursor)
+        if lba in self.lba_map:
+            old_block = self.lba_map[lba]["_block_index"]
+            self.valid_pages[old_block] = max(0, self.valid_pages[old_block] - 1)
+
+        self.block_wear[block] += 1
+        self.valid_pages[block] += 1
+
+        physical = self._decompose(block, page)
+
+        r = (physical["channel"] * self.dies_per_channel + physical["die"]) / (
+            self.channels * self.dies_per_channel
+        )
+        theta = (physical["channel"] / self.channels) * 360
+
+        entry = {
+            "lba": lba,
+            "physical": physical,
+            "radial": {
+                "r": r,
+                "theta": theta,
+                "z": physical["block"]
+            },
+            "wear": self.block_wear[block],
+            "_block_index": block,
+            "ts": time.time()
+        }
+
+        self.lba_map[lba] = entry
+        return entry
+
+    def read(self, key):
+        lba = self._hash_lba(key)
+        return self.lba_map.get(lba)
+
+    def garbage_collect(self, pressure=0.05):
+        """
+        Reclaim blocks with low valid page ratio.
+        """
+        victims = []
+        for b in range(self.total_blocks):
+            if self.valid_pages[b] == 0:
+                continue
+            ratio = self.valid_pages[b] / self.pages_per_block
+            if ratio < pressure:
+                victims.append((ratio, b))
+
+        victims.sort()  # lowest validity first
+
+        reclaimed = 0
+        for _, b in victims[: max(1, len(victims)//10)]:
+            # Simulate erase
+            self.valid_pages[b] = 0
+            self.block_wear[b] += 1
+            reclaimed += 1
+
+        return reclaimed
+
+
+# -------------------------
+# Layer 2: Controller / Timing
+# -------------------------
+class NVMESimulator:
+    def __init__(self, mapper, read_us=80, write_us=200):
+        self.m = mapper
+        self.read_us = read_us
+        self.write_us = write_us
+
+        self.channel_busy = [0.0] * mapper.channels
+
+    def _schedule(self, ch, latency_us):
+        now = time.time()
+        start = max(now, self.channel_busy[ch])
+        finish = start + latency_us / 1_000_000
+        self.channel_busy[ch] = finish
+        return finish - now
+
+    def write(self, key, temp):
+        entry = self.m.write(key, temp)
+        ch = entry["physical"]["channel"]
+        lat = self._schedule(ch, self.write_us)
+        return lat, entry
+
+    def read(self, key):
+        entry = self.m.read(key)
+        if not entry:
+            return None, None
+        ch = entry["physical"]["channel"]
+        lat = self._schedule(ch, self.read_us)
+        return lat, entry
+
+
+# -------------------------
+# Layer 3: Live Metrics
+# -------------------------
+class Metrics:
+    def __init__(self, window=500):
+        self.latencies = deque(maxlen=window)
+        self.timestamps = deque(maxlen=window)
+
+    def record(self, lat):
+        self.latencies.append(lat)
+        self.timestamps.append(time.time())
+
+    def summary(self):
+        if not self.latencies:
+            return {}
+
+        avg = sum(self.latencies) / len(self.latencies)
+        p99 = sorted(self.latencies)[int(0.99 * len(self.latencies))]
+        iops = len(self.latencies) / (self.timestamps[-1] - self.timestamps[0] + 1e-6)
+
+        return {
+            "avg_latency_ms": avg * 1000,
+            "p99_ms": p99 * 1000,
+            "iops": iops
+        }
+
+
+# -------------------------
+# Layer 4: Visualization
+# -------------------------
+class Visualizer:
+    def __init__(self):
+        plt.ion()
+        self.fig = plt.figure()
+        self.ax = self.fig.add_subplot(projection='3d')
+
+    def update(self, mapper):
+        self.ax.clear()
+
+        xs, ys, zs, cs = [], [], [], []
+
+        for e in mapper.lba_map.values():
+            r = e["radial"]["r"]
+            theta = math.radians(e["radial"]["theta"])
+            z = e["radial"]["z"]
+
+            xs.append(r * math.cos(theta))
+            ys.append(r * math.sin(theta))
+            zs.append(z)
+            cs.append(e["wear"])
+
+        self.ax.scatter(xs, ys, zs, c=cs)
+        self.ax.set_title("NVMe Radial NAND Map")
+        self.ax.set_xlabel("X")
+        self.ax.set_ylabel("Y")
+        self.ax.set_zlabel("Block")
+
+        plt.draw()
+        plt.pause(0.01)
+
+
+# -------------------------
+# Orchestrator Loop
+# -------------------------
+def run_sim(duration_sec=10):
+    mapper = NVMEMapper()
+    sim = NVMESimulator(mapper)
+    metrics = Metrics()
+    viz = Visualizer()
+
+    start = time.time()
+    i = 0
+
+    while time.time() - start < duration_sec:
+        key = f"file_{i}"
+
+        if random.random() < 0.6:
+            lat, _ = sim.write(key, temp=random.random())
+        else:
+            lat, _ = sim.read(key)
+
+        if lat:
+            metrics.record(lat)
+
+        # Periodic GC
+        if i % 200 == 0:
+            mapper.garbage_collect()
+
+        # Update visualization periodically
+        if i % 50 == 0:
+            viz.update(mapper)
+            print(metrics.summary())
+
+        i += 1
+
+    print("FINAL:", metrics.summary())
+
+
+if __name__ == "__main__":
+    run_sim(15)
