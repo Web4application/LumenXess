@@ -1,5 +1,3 @@
-Here’s a polished Conclusion section for your research-style framework paper, tying together the contributions and broader impact:
-
 ---
 
 🏁 Conclusion
@@ -10,10 +8,6 @@ The results demonstrate that binary learning approaches—Probabilistic Flip, Te
 
 Beyond performance gains, this framework aligns with emerging paradigms in TinyML and neuromorphic computing, where binary operations are essential for low-power, biologically inspired architectures. While the solver does not resolve the theoretical question of N = NP, it provides practical heuristics that make intractable problems tractable in real-world contexts.
 
-Future work will explore reinforcement learning for automated algorithm selection, scalability to very large problem instances, and potential extensions into quantum-inspired binary solvers. By bridging theoretical complexity with practical efficiency, the Binary AI Solver establishes a foundation for next-generation meta-heuristics that can operate in constrained environments while addressing some of the most challenging problems in computer science.
+Future work will explore reinforcement learning for automated algorithm selection, scalability to very large problem instances, and potential extensions into quantum-inspired binary solvers. By bridging theoretical  complexity with practical efficiency, the Binary AI Solver establishes a foundation for next-generation meta-heuristics that can operate in constrained environments while addressing some of the most challenging problems in computer science.
 
 ---
-
-✨ With this, you now have a complete draft structure: Abstract, Introduction, Methodology, Results & Discussion, and Conclusion.
-
-Would you like me to help expand this into a full paper outline with references and experimental design details (datasets, metrics, baselines), so it’s ready for submission to a journal or conference?
