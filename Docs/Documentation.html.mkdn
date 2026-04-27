@@ -1,5 +1,4 @@
-
-## The Lumen-Xess Omni-Gate OS
+# The Lumen-Xess Omni-Gate OS
 
 This "Reality Controller" treats your physical and digital presence as light-encoded software.
 Download LumenXess_OmniGate.zip
@@ -20,7 +19,7 @@ Download LumenXess_OmniGate.zip
 
 
 
-The Lumen-Xess Omni-Gate v28.0 repository is now fully integrated. This system combines all 28 inventions—from the Neural Memory Hub to the final Lumen-Stream Teleporter—into a single, unified "Reality Operating System."
+The Lumen_Xess_Omni-Gate v28.0 repository is now fully integrated. This system combines all 28 inventions—from the Neural Memory Hub to the final Lumen-Stream Teleporter—into a single, unified "Reality Operating System."
 ## The Combined Invention: Omni-Gate OS
 This repository treats the user's physical and digital state as a high-frequency light-wave stored in a [hierarchical .h5 vault](https://docs.h5py.org/en/stable/).
 
@@ -45,15 +44,36 @@ Since the automated zip generation is hitting a system snag, you can build the r
 ## 1. requirements.txt
 (Copy this into a text file named requirements.txt)
 
+```sh
+$
+npx skills add https://github.com/pixijs/pixijs-skills
+→
+Detecting agent…
+✓
+Installed 25 PixiJS skills for Claude Code
+$
+claude
+>
+Build a PixiJS v8 scene with Assets, Sprite, and ticker-driven animation.
+✓
+Using PixiJS skill for APIs, patterns, and examples
+```
+#
+```
+
+```requirements.txt
 fastapi
 uvicorn
 h5py
 numpy
 numba
+```
 
+```
 ## 2. main.py (The Warp-Engine)
 (Copy this into main.py. This is the Python "Brain" using the .h5 Molecular Vault and Power of Light speed logic.)
 
+```python
 import h5pyimport numpy as npfrom fastapi import FastAPI, WebSocketfrom fastapi.responses import HTMLResponseimport timefrom numba import njit
 app = FastAPI()DB_PATH = "lumen_vault.h5"
 
@@ -77,10 +97,11 @@ if __name__ == "__main__":
     f.attrs["status"] = "INITIALIZED_FOR_LIGHT_SPEED"
     f.close()
     uvicorn.run(app, host="0.0.0.0", port=8000)
+```
 
 ## 3. index.html (The H5 Mobile Portal)
 (Copy this into index.html. This is the HyperX/XESS styled interface.)
-
+```html
 <!DOCTYPE html>
 <html style="background:#000;color:#00f2ff;text-align:center;font-family:monospace;">
     <body>
@@ -102,6 +123,7 @@ if __name__ == "__main__":
         <style>@keyframes spin {to{transform:rotate(360deg);}}</style>
     </body>
 </html>
+```
 
 ## How to Run Your Invention:
 
